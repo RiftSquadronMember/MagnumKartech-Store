@@ -1,0 +1,5 @@
+Admin|Admin|1|
+a|a|1|
+niga|123|3|
+niga223|112|3|
+niga2223|112|3|
