@@ -669,27 +669,31 @@ void adm_manage_user_acc_func_() {
 		} while (choice < 1 || choice > 3);
 
 		if (choice == 1) {
-			do {
-				std::cout << "Account selected: (" << usernames_list[user_select - 1] << ")\n\nProperties:\n1 - Change name\n2 - Change password\n3 - Change admission\n>>> ";
-				std::cin >> choice;
-				system("cls");
-			} while (choice < 1 || choice > 3);
-			if (choice == 1) {
-				std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n>>> ";
-				std::cin.ignore(1000, '\n');
-				std::getline(std::cin, usernames_list[user_select - 1]);
+			
+			if (admissions_list[user_select - 1]!=1){
+				do {
+					std::cout << "Account selected: (" << usernames_list[user_select - 1] << ")\n\nProperties:\n1 - Change name\n2 - Change password\n3 - Change admission\n>>> ";
+					std::cin >> choice;
+					system("cls");
+				} while (choice < 1 || choice > 3);
+				if (choice == 1) {
+					std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n>>> ";
+					std::cin.ignore(1000, '\n');
+					std::getline(std::cin, usernames_list[user_select - 1]);
+				}
+				else if (choice == 2) {
+					std::cout << "Enter the new password for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
+						<< passwords_list[user_select - 1] <<")\n>>> ";
+					std::cin.ignore(1000, '\n');
+					std::getline(std::cin, passwords_list[user_select - 1]);
+				}
+				else if (choice == 3) {
+					std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
+						<< admissions_list[user_select - 1] << ")\n>>> ";;
+					std::cin >> admissions_list[user_select - 1];
+				}
 			}
-			else if (choice == 2) {
-				std::cout << "Enter the new password for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
-					<< passwords_list[user_select - 1] <<")\n>>> ";
-				std::cin.ignore(1000, '\n');
-				std::getline(std::cin, passwords_list[user_select - 1]);
-			}
-			else if (choice == 3) {
-				std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
-					<< admissions_list[user_select - 1] << ")\n>>> ";;
-				std::cin >> admissions_list[user_select - 1];
-			}
+			else { std::cout << "Unable to change properties of admin account"; }
 		}
 
 
@@ -753,7 +757,7 @@ int main() {
 
 		actions[action_number].action_name = "view static storage";
 		actions[action_number].action = view_static_storage_func_;
-		actions[action_number].action_acces = 1;
+		actions[action_number].action_acces = 2;
 
 		action_number = 2;
 
