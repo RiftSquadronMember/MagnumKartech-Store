@@ -46,37 +46,38 @@ void write_static_storage(){
 	std::vector<std::string> ammo_types;
 	std::vector<int> ammo_amount;
 	std::vector<float> ammo_cost;
+	if (file.is_open()) {
+		while (std::getline(file, line)) {
 
-	while (std::getline(file, line)) {
-		
-		for (int i = 0; i < line.length(); i++) {
-			if (line[i] != '|' && line[i] != '_' && line[i] != '$') {
-				word = word + line[i];
-			}
-			if (line[i] == '|' && ammoCaliberEntered == false) {
-				overall_name = word;
-				ammoCaliberEntered = true;
-				//std::cout << "Ammo name: (" <<word<< ")   ";
-				word = "";
-				
-			}
-			if (line[i] == '_') {
-				//std::cout << "   " <<word <<" " << heading << "   ";
-				if (heading == 0) { ammo_types.push_back(word); }
-				if (heading == 1) { ammo_amount.push_back(stoi(word)); }
-				if (heading == 2) { ammo_cost.push_back(stof(word)); heading = -1; }
-				word = "";
-				heading++;
-			}
-			if (line[i] == '$') {
-				//std::cout << "  Endline \n";
-				ammoCaliberEntered = false;
-				word = "";
-				heading = 0;
-				Ammunition_Static.push_back(AmmoType(overall_name, ammo_types, ammo_amount, ammo_cost));
-				ammo_types.clear();
-				ammo_amount.clear();
-				ammo_cost.clear();
+			for (int i = 0; i < line.length(); i++) {
+				if (line[i] != '|' && line[i] != '_' && line[i] != '$') {
+					word = word + line[i];
+				}
+				if (line[i] == '|' && ammoCaliberEntered == false) {
+					overall_name = word;
+					ammoCaliberEntered = true;
+					//std::cout << "Ammo name: (" <<word<< ")   ";
+					word = "";
+
+				}
+				if (line[i] == '_') {
+					//std::cout << "   " <<word <<" " << heading << "   ";
+					if (heading == 0) { ammo_types.push_back(word); }
+					if (heading == 1) { ammo_amount.push_back(stoi(word)); }
+					if (heading == 2) { ammo_cost.push_back(stof(word)); heading = -1; }
+					word = "";
+					heading++;
+				}
+				if (line[i] == '$') {
+					//std::cout << "  Endline \n";
+					ammoCaliberEntered = false;
+					word = "";
+					heading = 0;
+					Ammunition_Static.push_back(AmmoType(overall_name, ammo_types, ammo_amount, ammo_cost));
+					ammo_types.clear();
+					ammo_amount.clear();
+					ammo_cost.clear();
+				}
 			}
 		}
 	}
@@ -93,37 +94,38 @@ void write_active_storage() {
 	std::vector<std::string> ammo_types;
 	std::vector<int> ammo_amount;
 	std::vector<float> ammo_cost;
+	if (file.is_open()) {
+		while (std::getline(file, line)) {
 
-	while (std::getline(file, line)) {
+			for (int i = 0; i < line.length(); i++) {
+				if (line[i] != '|' && line[i] != '_' && line[i] != '$') {
+					word = word + line[i];
+				}
+				if (line[i] == '|' && ammoCaliberEntered == false) {
+					overall_name = word;
+					ammoCaliberEntered = true;
+					//std::cout << "Ammo name: (" <<word<< ")   ";
+					word = "";
 
-		for (int i = 0; i < line.length(); i++) {
-			if (line[i] != '|' && line[i] != '_' && line[i] != '$') {
-				word = word + line[i];
-			}
-			if (line[i] == '|' && ammoCaliberEntered == false) {
-				overall_name = word;
-				ammoCaliberEntered = true;
-				//std::cout << "Ammo name: (" <<word<< ")   ";
-				word = "";
-
-			}
-			if (line[i] == '_') {
-				//std::cout << "   " <<word <<" " << heading << "   ";
-				if (heading == 0) { ammo_types.push_back(word); }
-				if (heading == 1) { ammo_amount.push_back(stoi(word)); }
-				if (heading == 2) { ammo_cost.push_back(stof(word)); heading = -1; }
-				word = "";
-				heading++;
-			}
-			if (line[i] == '$') {
-				//std::cout << "  Endline \n";
-				ammoCaliberEntered = false;
-				word = "";
-				heading = 0;
-				Ammunition.push_back(AmmoType(overall_name, ammo_types, ammo_amount, ammo_cost));
-				ammo_types.clear();
-				ammo_amount.clear();
-				ammo_cost.clear();
+				}
+				if (line[i] == '_') {
+					//std::cout << "   " <<word <<" " << heading << "   ";
+					if (heading == 0) { ammo_types.push_back(word); }
+					if (heading == 1) { ammo_amount.push_back(stoi(word)); }
+					if (heading == 2) { ammo_cost.push_back(stof(word)); heading = -1; }
+					word = "";
+					heading++;
+				}
+				if (line[i] == '$') {
+					//std::cout << "  Endline \n";
+					ammoCaliberEntered = false;
+					word = "";
+					heading = 0;
+					Ammunition.push_back(AmmoType(overall_name, ammo_types, ammo_amount, ammo_cost));
+					ammo_types.clear();
+					ammo_amount.clear();
+					ammo_cost.clear();
+				}
 			}
 		}
 	}
@@ -698,6 +700,42 @@ void adm_manage_user_acc_func_() {
 }
 
 
+void first_start() {
+	std::ifstream file;
+	std::ofstream file_write;
+	file.open("AmmoProductsStatic.txt");
+	if (!file.is_open()) {
+		std::ofstream file_read1("AmmoProductsStatic.txt");
+		file_write.open("AmmoProductsStatic.txt");
+		file_write << "7.62x39|HP_100_90_SP_100_90_AP_100_90_Tracer_100_90_$\n";
+		file_write << "12g|Slug_140_90_Shrap_200_90_Kartech_200_90_Tracer Slug_100_90_Dragon Breath_200_150_$\n";
+		file_write << "45.ACP|HP_100_40_SP_100_50_Tracer_100_90_$\n";
+		file_write << "50.|HE_140_1100_AP_50_900_Tracer_200_700_APHE_100_1600_$\n";
+		file_write.close();
+		std::cout << "File \"Static\" was created via \"blank slate\" scenario\n"; }
+	file.close();
+	file.open("AmmoProducts.txt");
+	if (!file.is_open()) { 
+		std::ofstream file_read2("AmmoProducts.txt");
+	std::cout << "File \"Mobile\" was created via \"blank slate\" scenario\n"; }
+	file.close();
+	file.open("OtherUsers.txt");
+	if (!file.is_open()) {
+		std::ofstream file_read3("OtherUsers.txt"); 
+		file_write.open("OtherUsers.txt");
+		file_write << ("Admin|Admin|1|");
+		file_write.close();
+		std::cout << "File \"Users\" was created via \"blank slate\" scenario\n"; 
+		std::cout << "Default admin account name is \"Admin\" and password is equal\n\n";
+	}
+
+	file.close();
+}
+
+
+
+
+
 int main() {
 	const int amount_of_actions = 6;
 	int action_number = 0;
@@ -742,7 +780,7 @@ int main() {
 		actions[action_number].action_acces = 3;
 
 	}
-
+	first_start();
 	write_static_storage();
 	write_active_storage();
 	rewrite_active_storage();
