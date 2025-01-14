@@ -27,7 +27,7 @@ struct AmmoType {
 
 std::string currentUserName, currentUserPassword, current_user_cart_directory, Discount_caliber;
 int currentUserAdmission, cartContainmentAmount = 0;
-bool logged = false;
+bool logged = false, caliber_disc = false, money_disc = false;
 float total_cart_cost = 0, discount_amount = 0.0;
 
 std::vector<std::string> usernames_list, passwords_list;
@@ -292,6 +292,8 @@ void cart_in_file_rewrite() {
 	}
 }
 void cart_proportions_renew() {
+	money_disc = false;
+	caliber_disc = false;
 	int index = 0;
 	bool caliber_match1 = false;
 	cartContainmentAmount = 0;
@@ -350,6 +352,7 @@ void cart_proportions_renew() {
 				if (CartContainment[i].Ammo_name == Discount_caliber) { 
 					total_cart_cost += (CartContainment[i].AmmoTypesCost[k] * (1 - (discount_amount/100))) * CartContainment[i].AmmoTypesAmount[k]; 
 					std::cout << "With: " << CartContainment[i].Ammo_name << "\n";
+					caliber_disc = true;
 				}
 				else {
 					total_cart_cost += CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k];
@@ -367,7 +370,7 @@ void cart_proportions_renew() {
 	}
 	cart_in_file_rewrite();
 
-
+	if (total_cart_cost > 50000) { total_cart_cost * 0.9; money_disc = true; }
 
 
 
@@ -909,8 +912,17 @@ void view_cart_func_() {
 							<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
 					}
 				}
-				std::cout << std::left << "\\_________________\n" <<
-					"\n\nTotal cost of your cart is " << total_cart_cost << "!\n\nWould you like to:\n1 - Buy all of these (" << total_cart_cost << ")\n" <<
+				
+				if(caliber_disc == true || money_disc == true){
+					std::cout << "+-------------------\n";
+					std::cout << "| Discounts active:\n";
+					if (caliber_disc == true) { std::cout << "| +- Discounted caliber is " << Discount_caliber<<"  ["<<discount_amount<<"% off]" << std::endl; }
+					if (money_disc == true) { std::cout << "| +- your cart worth more than 50k [10% off]\n"; }
+					
+				}
+				std::cout << std::left << "\\_________________\n";
+
+				std::cout<< "\n\nTotal cost of your cart is " << total_cart_cost << "!\n\nWould you like to:\n1 - Buy all of these (" << total_cart_cost << ")\n" <<
 					"2 - Change containings of your cart\n3 - Back\n\n>>> ";
 				std::cin >> choice1;
 				system("cls");
