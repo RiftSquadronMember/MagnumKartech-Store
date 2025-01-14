@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <iomanip>
+#include <Windows.h>
 
 
 struct userAction {
@@ -23,19 +25,19 @@ struct AmmoType {
 };
 
 
-std::string currentUserName, currentUserPassword;
-int currentUserAdmission;
+std::string currentUserName, currentUserPassword, current_user_cart_directory;
+int currentUserAdmission, cartContainmentAmount = 0;
 bool logged = false;
+float total_cart_cost = 0;
 
 std::vector<std::string> usernames_list, passwords_list;
 std::vector<int> admissions_list;
 
-std::vector<AmmoType>Ammunition_Static{}, Ammunition{};
+std::vector<AmmoType>Ammunition_Static{}, Ammunition{}, CartContainment{};
 
 
 
-
-void write_static_storage(){
+void write_static_storage() {
 	std::ifstream file;
 	file.open("AmmoProductsStatic.txt");
 	bool ammoCaliberEntered = false; //explains when the ammo caliber is entered and where is the end of the line;
@@ -132,13 +134,13 @@ void write_active_storage() {
 }
 
 
-void read_storage(std::vector<AmmoType> storage){
+void read_storage(std::vector<AmmoType> storage) {
 	for (int i = 0; i < storage.size(); i++) {
-		 
+
 		std::cout << "\n+---------->\n| Ammo Caliber: " << storage[i].Ammo_name << "\n+---------->";
 		std::cout << "\n| Ammo types:";
 		for (int k = 0; k < storage[i].AmmoTypesIncluded.size(); k++) {
-			std::cout << "\t|"<< storage[i].AmmoTypesIncluded[k];
+			std::cout << "\t|" << storage[i].AmmoTypesIncluded[k];
 		}
 		std::cout << "\n| Ammo amount:";
 		for (int k = 0; k < storage[i].AmmoTypesAmount.size(); k++) {
@@ -165,12 +167,12 @@ void read_storage(std::vector<AmmoType> storage){
 */
 ///  - --end-- -
 
-void createLists(){
-	std::string line,word;
+void createLists() {
+	std::string line, word;
 	std::ifstream file;
 	int counter = 0;
 	file.open("OtherUsers.txt");
-	while (std::getline(file, line)) { 
+	while (std::getline(file, line)) {
 		for (int i = 0; i < line.length(); i++) {
 			if (line[i] != '|') {
 				word = word + line[i];
@@ -190,11 +192,180 @@ void createLists(){
 				}
 				word = "";
 			}
-			
+
 		}
 		counter = 0;
 	}
 }
+
+void delete_caliber_from_cart_(std::string caliber) {
+	std::vector<AmmoType>Cart_Redo{};
+	for (int i = 0; i < CartContainment.size(); i++) {
+		if (CartContainment[i].Ammo_name != caliber) {
+			Cart_Redo.push_back(CartContainment[i]);
+		}
+	}
+	CartContainment.swap(Cart_Redo);
+}
+void delete_type_from_cart_(std::string caliber, std::string type) {
+	std::vector < std::string > Names_redo{};
+	std::vector <int> amount_redo{};
+	int a;
+
+
+	for (int i = 0; i < CartContainment.size(); i++) {
+		for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+			if (CartContainment[i].Ammo_name == caliber) {
+				if (CartContainment[i].AmmoTypesIncluded[k] != type) {
+					Names_redo.push_back(CartContainment[i].AmmoTypesIncluded[k]);
+					amount_redo.push_back(CartContainment[i].AmmoTypesAmount[k]);
+				}
+				CartContainment[i].AmmoTypesAmount.swap(amount_redo);
+				CartContainment[i].AmmoTypesIncluded.swap(Names_redo);
+			}
+		}
+	}
+	
+
+}
+
+
+void write_carts() {
+	std::ifstream file;
+	file.open(current_user_cart_directory);
+	bool ammoCaliberEntered = false; //explains when the ammo caliber is entered and where is the end of the line;
+	int heading = 0; //from 0 to 2, explains where information to store, like 0 for ammo type, 1 for amount and 2 for cost per round
+	std::string line, word;
+
+	std::string overall_name;
+	std::vector<std::string> ammo_types;
+	std::vector<int> ammo_amount;
+	std::vector<float> ammo_cost;
+	if (file.is_open()) {
+		while (std::getline(file, line)) {
+
+			for (int i = 0; i < line.length(); i++) {
+				if (line[i] != '|' && line[i] != '_' && line[i] != '$') {
+					word = word + line[i];
+				}
+				if (line[i] == '|' && ammoCaliberEntered == false) {
+					overall_name = word;
+					ammoCaliberEntered = true;
+					//std::cout << "Ammo name: (" <<word<< ")   ";
+					word = "";
+
+				}
+				if (line[i] == '_') {
+					//std::cout << "   " <<word <<" " << heading << "   ";
+					if (heading == 0) { ammo_types.push_back(word); }
+					if (heading == 1) { ammo_amount.push_back(stoi(word)); }
+					if (heading == 2) { ammo_cost.push_back(stof(word)); heading = -1; }
+					word = "";
+					heading++;
+				}
+				if (line[i] == '$') {
+					//std::cout << "  Endline \n";
+					ammoCaliberEntered = false;
+					word = "";
+					heading = 0;
+					CartContainment.push_back(AmmoType(overall_name, ammo_types, ammo_amount, ammo_cost));
+					ammo_types.clear();
+					ammo_amount.clear();
+					ammo_cost.clear();
+				}
+			}
+		}
+	}
+}
+void cart_in_file_rewrite() {
+	std::ofstream file_write, file(current_user_cart_directory);
+	file_write.open(current_user_cart_directory);
+	if (CartContainment.size() != 0) {
+		for (int i = 0; i < CartContainment.size(); i++) {
+			file_write << CartContainment[i].Ammo_name << "|";
+
+			if (CartContainment[i].AmmoTypesIncluded.size() != 0) {
+				for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+					file_write << CartContainment[i].AmmoTypesIncluded[k] << "_" << CartContainment[i].AmmoTypesAmount[k] << "_" << CartContainment[i].AmmoTypesCost[k] << "_";
+				}
+			}
+			file_write << "$" << std::endl;
+		}
+	}
+}
+void cart_proportions_renew() {
+	int index = 0;
+	bool caliber_match1 = false;
+	cartContainmentAmount = 0;
+	total_cart_cost = 0.0;
+	std::vector<AmmoType>Cart_Redo{};
+
+	if (CartContainment.size() != 0) {
+		for (int i = 0; i < CartContainment.size(); i++) {
+			if (cartContainmentAmount + CartContainment[i].AmmoTypesIncluded.size() != 0) {
+				Cart_Redo.push_back(CartContainment[i]);
+			}
+			else {
+				std::cout << "Caliber " << CartContainment[i].Ammo_name << " was removed because of emptiness\n";
+			}
+			cartContainmentAmount += CartContainment[i].AmmoTypesIncluded.size();
+		}
+
+		for (int i = 0; i < CartContainment.size(); i++) {
+			caliber_match1 = false;
+			for (int k = 0; k < Ammunition.size(); k++) {
+				if (CartContainment[i].Ammo_name == Ammunition[k].Ammo_name) {
+					caliber_match1 = true;
+				}
+			}
+			if (caliber_match1 == false) {
+				delete_caliber_from_cart_(CartContainment[i].Ammo_name);
+			}
+		}
+		CartContainment.swap(Cart_Redo);
+		Cart_Redo.clear();
+
+		for (int i = 0; i < CartContainment.size(); i++) {
+			for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+				if (CartContainment[i].AmmoTypesAmount[k] < 0) { CartContainment[i].AmmoTypesAmount[k] = 0; }
+				
+				for (int l = 0; l < Ammunition.size(); l++) {
+					for (int b = 0; b < Ammunition[l].AmmoTypesIncluded.size(); b++) {
+						if (Ammunition[l].Ammo_name == CartContainment[i].Ammo_name && Ammunition[l].AmmoTypesIncluded[b] == CartContainment[i].AmmoTypesIncluded[k]) {
+							if (CartContainment[i].AmmoTypesAmount[k] > Ammunition[l].AmmoTypesAmount[b]) {
+								CartContainment[i].AmmoTypesAmount[k] = Ammunition[l].AmmoTypesAmount[b];
+
+							}
+							CartContainment[i].AmmoTypesCost[k] = Ammunition[l].AmmoTypesCost[b];
+						}
+
+					}
+				}
+			}
+		}
+
+		
+		
+
+		for (int i = 0; i < CartContainment.size(); i++) {
+			for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+				total_cart_cost += CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k];
+			}
+		}
+
+		
+
+
+	}
+		cart_in_file_rewrite();
+
+
+
+
+
+};
+
+
 
 void logUserIn(std::string UserName, std::string Password) {
 	for (int i = 0; i < usernames_list.size(); i++) {
@@ -202,10 +373,21 @@ void logUserIn(std::string UserName, std::string Password) {
 			if (Password == passwords_list[i]) {
 				logged = true;
 				system("cls");
-				std::cout << "\nYou've been logged in succesfully as " << UserName << "\n\n";
+				std::cout << "\nYou've been logged in succesfully as " << UserName << "\n";
 				currentUserName = UserName;
 				currentUserPassword = Password;
 				currentUserAdmission = admissions_list[i];
+				current_user_cart_directory = "CartsSaves/" + currentUserName + ".txt";
+				std::ifstream file;
+				std::ofstream file_write;
+				file.open(current_user_cart_directory);
+				if (!file.is_open()) {
+					std::ofstream file_create(current_user_cart_directory);
+					std::cout << "Looks like you're new here! We have created your cart folder!\n";
+				}
+				file.close();
+				std::cout << "\n";
+				write_carts();
 				
 			};
 		}
@@ -219,15 +401,15 @@ void UI_out(int amount_of_actions, userAction actions[]) {
 			std::cout << i + 1 << " - " << actions[i].action_name << "\n";
 		}
 	}
-	
+
 	std::cout << "Choose an action >>> ";
 	std::cin >> action;
 	system("cls");
 	if (actions[action - 1].action_acces >= currentUserAdmission) {
 		actions[action - 1].action();
 	}
-	
-	
+
+
 
 
 
@@ -238,9 +420,9 @@ void EnterMenuOut() {
 	std::ofstream file;
 	std::string password, username;
 	bool all_good = false, invalidSlash = false, used_name = false;
-	
 
-	
+
+
 	do {
 		do {
 			std::cout << "Hello, user!\nWould you like to\n\n1 - sign in\n2 - sign up\n>>> ";
@@ -253,10 +435,10 @@ void EnterMenuOut() {
 
 		if (enter_code == 1) {
 			std::cout << "Enter your username\t>> ";
-			
+
 			std::getline(std::cin, username);
 			std::cout << "\nEnter your password\t>> ";
-			
+
 			std::getline(std::cin, password);
 		}
 		else if (enter_code == 2) {
@@ -271,7 +453,7 @@ void EnterMenuOut() {
 					std::cout << "hmmm, your nickname seem to match an existing one... try other one!\n\n";
 				}
 				std::cout << "Enter your username\t<< ";
-				
+
 				std::getline(std::cin, username);
 
 				for (int i = 0; i < usernames_list.size(); i++) {
@@ -288,7 +470,7 @@ void EnterMenuOut() {
 				system("cls");
 				if (invalidSlash == false && used_name == false) {
 					all_good = true;
-					
+
 				}
 			} while (all_good == false);
 
@@ -306,28 +488,6 @@ void EnterMenuOut() {
 	} while (logged == false);
 }
 
-void createAdmin(){
-	std::ofstream filework, file1("AdminList.txt"), file2("OtherUsers.txt");
-	filework.open("AdminList.txt");
-	if (filework.is_open() == true) {
-		std::cout << "Admins list created succesfully";
-	}
-	else{ std::cout << "Admins list failure"; }
-	filework << "Admin|Admin|1" << std::endl;
-	filework.close();
-	std::ofstream ;
-	filework.open("OtherUsers.txt");
-	if (filework.is_open() == true) {
-		std::cout << "User list created succesfully";
-	}
-	else { std::cout << "User list failure"; }
-	filework.close();
-
-
-	
-
-
-}
 void rewrite_saves() {
 	std::remove("OtherUsers.txt");
 	std::ofstream file_write, file("OtherUsers.txt");
@@ -336,6 +496,7 @@ void rewrite_saves() {
 		file_write << usernames_list[i] << "|" << passwords_list[i] << "|" << admissions_list[i] << "|" << std::endl;
 	}
 }
+
 void delete_user(std::string username) {
 	int user_index = 0, confirmation = 0;
 	for (int i = 0; i < usernames_list.size(); i++) {
@@ -360,7 +521,7 @@ void delete_user(std::string username) {
 		usernames_list.swap(names_redo);
 		passwords_list.swap(passwords_redo);
 		admissions_list.swap(adm_redo);
-		
+
 		rewrite_saves();
 		std::cout << "Account were deleted succesfully!\n";
 	}
@@ -375,11 +536,11 @@ void rewrite_active_storage() {
 	file_write.open("AmmoProducts.txt");
 	for (int i = 0; i < Ammunition.size(); i++) {
 		file_write << Ammunition[i].Ammo_name << "|";
-		
-		if (Ammunition[i].AmmoTypesIncluded.size() != 0){
-		for (int k = 0; k < Ammunition[i].AmmoTypesIncluded.size(); k++) {
-		file_write << Ammunition[i].AmmoTypesIncluded[k] << "_" << Ammunition[i].AmmoTypesAmount[k] <<"_" << Ammunition[i].AmmoTypesCost[k]<< "_";
-		}
+
+		if (Ammunition[i].AmmoTypesIncluded.size() != 0) {
+			for (int k = 0; k < Ammunition[i].AmmoTypesIncluded.size(); k++) {
+				file_write << Ammunition[i].AmmoTypesIncluded[k] << "_" << Ammunition[i].AmmoTypesAmount[k] << "_" << Ammunition[i].AmmoTypesCost[k] << "_";
+			}
 		}
 		file_write << "$" << std::endl;
 	}
@@ -391,7 +552,7 @@ void moderate_store_func_() {
 	int choice = 0, caliber_choice = 0, type_choice = 0;
 	bool task_is_done = false, task_is_done2 = false, task_is_done3 = false, possibility = true;
 	while (task_is_done == false) {
-		
+
 		do {
 			std::cout << "What do you want to do?\n1 - Add a new type\n2 - Change already added one\n3 - Refill with the static storage\n4 - Go back\n>>> ";
 			std::cin >> choice;
@@ -419,7 +580,7 @@ void moderate_store_func_() {
 				std::cout << "This caliber is already exist";
 			}
 
-			
+
 		}
 
 		else if (choice == 2) {
@@ -436,7 +597,7 @@ void moderate_store_func_() {
 				do {
 					task_is_done2 = false;
 					do {
-						
+
 						std::cout << "Ammo caliber choosen: (" << Ammunition[caliber_choice - 1].Ammo_name <<
 							")\n\nChoose an action:\n1 - ReName\n2 - Add a new type\n3 - Choose exact type\n4 - Delete this caliber\n5 - Go back\n>>> ";
 						std::cin >> choice;
@@ -451,7 +612,7 @@ void moderate_store_func_() {
 						rewrite_active_storage();
 					}
 
-					else if (choice == 2){
+					else if (choice == 2) {
 						system("cls");
 						std::string name;
 						int amount;
@@ -475,7 +636,7 @@ void moderate_store_func_() {
 						Ammunition[caliber_choice - 1].AmmoTypesCost.push_back(cost);
 						Ammunition[caliber_choice - 1].AmmoTypesIncluded.push_back(name);
 						rewrite_active_storage();
-						
+
 
 
 
@@ -541,7 +702,7 @@ void moderate_store_func_() {
 											amounts_redo.push_back(Ammunition[caliber_choice - 1].AmmoTypesAmount[i]);
 											costs_redo.push_back(Ammunition[caliber_choice - 1].AmmoTypesCost[i]);
 
-											
+
 
 										}
 									}
@@ -586,21 +747,22 @@ void moderate_store_func_() {
 			else { std::cout << "NO AMMUNITION ADDED! Restore your active storage, or add a new ammo type by yourself!\n"; }
 		}
 
-		else if (choice == 3) {  
+		else if (choice == 3) {
 			do {
 				std::cout << "Are you sure you DO want to refill?\nAny custom calibers will be vanished\n\n1 - Yes, refill\n2 - No, go back\n>>>";
 				std::cin >> choice;
-			} while(choice < 1 || choice > 2);
+			} while (choice < 1 || choice > 2);
 			Ammunition.swap(Ammunition_Static);
 			Ammunition_Static.clear();
 			write_static_storage();
 			rewrite_active_storage();
-			system("cls"); 
+			system("cls");
 			task_is_done = true;
 			std::cout << "Storage refilled succesfully!\n";
-}
+		}
 
-		else if (choice == 4) { task_is_done = true; system("cls"); }}
+		else if (choice == 4) { task_is_done = true; system("cls"); }
+	}
 }
 void view_static_storage_func_() {
 	read_storage(Ammunition_Static);
@@ -608,13 +770,241 @@ void view_static_storage_func_() {
 void renew_current_storage_func_() {
 	std::cout << "blank storage you see, there's current things you can change\n";
 }
+
+
+
+void store_UI_out() {
+	std::cout << std::left <<
+		"+-------------------\n" <<
+		"|   Store page\n" <<
+		"+-------------------\n" << std::setw(16) << "| Calibers" << std::setw(32) << "Types" << std::setw(16) << "(Amount)" << std::setw(16) << "(cost per round)\n";
+	for (int i = 0; i < Ammunition.size(); i++) {
+		std::cout << std::left << "| " << i + 1 << "] " << Ammunition[i].Ammo_name << std::endl;
+		for (int k = 0; k < Ammunition[i].AmmoTypesIncluded.size(); k++) {
+			std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << Ammunition[i].AmmoTypesIncluded[k] << std::setw(16)
+				<< Ammunition[i].AmmoTypesAmount[k] << std::setw(32)
+				<< Ammunition[i].AmmoTypesCost[k] << std::endl;
+		}
+	}
+}
+
 void view_store_func_() {
-	std::cout << "blank store, wow wow, so many types of ammunition here, look, ooo\n";
+	bool task1_isEnded = false;
+	int choice = 0, caliber, type, amount = 0, CaliberMatch = -1, TypeMatch = -1;
+	while (task1_isEnded == false) {
+		do {
+			store_UI_out();
+			std::cout << "\nChoose an action\n1 - Make a purchase\n2 - Back\n\n>>> ";
+			std::cin >> choice;
+			system("cls");
+		} while (choice < 1 || choice > 2);
+		if (choice == 1) {
+			do {
+				store_UI_out();
+				std::cout << "Choose a caliber\n>>> ";
+				std::cin >> caliber;
+				system("cls");
+			} while (caliber < 1 || caliber > Ammunition.size());
+			
+			do {
+				std::cout << "\nCaliber choosen: (" << Ammunition[caliber - 1].Ammo_name <<")\nChoose a type:\n";
+				for (int i = 0; i < Ammunition[caliber - 1].AmmoTypesIncluded.size(); i++) {
+					std::cout << i + 1 << ") - " << Ammunition[caliber - 1].AmmoTypesIncluded[i]<< std::endl;
+				}
+				std::cout << "\n>>> ";
+				std::cin >> type;
+				system("cls");
+			} while (type < 1 || type > Ammunition[caliber-1].AmmoTypesIncluded.size());
+
+
+			do {
+				std::cout << "Amount: ";
+				std::cin >> amount;
+				system("cls");
+			} while (amount < 0);
+			if (amount > Ammunition[caliber - 1].AmmoTypesAmount[type - 1]) {
+				amount = Ammunition[caliber - 1].AmmoTypesAmount[type - 1];
+			}
+			
+			
+
+			for (int i = 0; i < Ammunition.size(); i++) {
+
+
+				for (int b = 0; b < Ammunition[i].AmmoTypesIncluded.size(); b++) {
+					for (int k = 0; k < CartContainment.size(); k++) {
+						if (Ammunition[caliber - 1].Ammo_name == CartContainment[k].Ammo_name) {
+							CaliberMatch = k;
+							std::cout << "Calibers match fnd: " << Ammunition[i].Ammo_name << " - " 
+								<< CartContainment[k].Ammo_name << std::endl;
+							Sleep(40);
+						}
+						for (int n = 0; n < CartContainment[k].AmmoTypesIncluded.size(); n++) {
+							if (Ammunition[caliber - 1].AmmoTypesIncluded[type - 1] == CartContainment[k].AmmoTypesIncluded[n]) {
+								TypeMatch = n;
+								std::cout << "Ammunition: " << Ammunition[i].Ammo_name << " - " << CartContainment[k].Ammo_name << std::endl;
+								std::cout << "Match fnd: " << Ammunition[i].AmmoTypesIncluded[b]<<" - "<< CartContainment[k].AmmoTypesIncluded[n] << std::endl;
+							}
+						}
+					}
+				}
+			}
+			Sleep(200);
+			if (CaliberMatch == -1) {
+				CartContainment.push_back(AmmoType(Ammunition[caliber - 1].Ammo_name, 
+					{ Ammunition[caliber - 1].AmmoTypesIncluded[type - 1]},
+					{ amount },
+					{ Ammunition[caliber - 1].AmmoTypesCost[type - 1] }));
+				std::cout << "Caliber not found\n";
+				Sleep(25);
+			}
+
+			else if (CaliberMatch != -1 && TypeMatch == -1) {
+				CartContainment[CaliberMatch].AmmoTypesIncluded.push_back(Ammunition[caliber - 1].AmmoTypesIncluded[type - 1]);
+				CartContainment[CaliberMatch].AmmoTypesAmount.push_back(amount);
+				CartContainment[CaliberMatch].AmmoTypesCost.push_back(Ammunition[caliber - 1].AmmoTypesCost[type - 1]);
+				std::cout << "Caliber found, no type";
+				Sleep(25);
+			}
+			else if (CaliberMatch != -1 && TypeMatch != -1) {
+				CartContainment[CaliberMatch].AmmoTypesAmount[TypeMatch] += amount;
+				std::cout << "Caliber found, type found";
+				Sleep(25);
+			}
+			cart_proportions_renew();
+		
+		
+			system("cls");
+		
+		
+		}
+		if (choice == 2) { task1_isEnded = true; }
+
+	}
 }
+
 void view_cart_func_() {
-	std::cout << "there's your cart, so many shit buyed, you did\n";
+	std::string word;
+	bool task1_isEnded = false, task2_isEnded = false, task3_isEnded = false;
+	int choice1 = 0, ammo_caliber, ammo_type;
+	while (task1_isEnded == false) {
+		cart_proportions_renew();
+
+		if (cartContainmentAmount != 0 && CartContainment.size()!= 0) {
+			do {
+				std::cout << std::left <<
+					"+-------------------\n" <<
+					"| Your cart contains " << cartContainmentAmount << " positions in total!\n" <<
+					"+-------------------\n" << std::setw(16)<< "| Calibers" << std::setw(32) <<"Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
+					<< std::setw(8) << "(Total cost)\n";
+				for (int i = 0; i < CartContainment.size(); i++) {
+					std::cout << std::left << "| " << i + 1 << "] " << CartContainment[i].Ammo_name << std::endl;
+					for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+						std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16) 
+							<< CartContainment[i].AmmoTypesAmount[k] << std::setw(24)
+							<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
+					}
+				}
+				std::cout << std::left << "\\_________________\n" <<
+					"\n\nTotal cost of your cart is " << total_cart_cost << "!\n\nWould you like to:\n1 - Buy all of these (" << total_cart_cost << ")\n" <<
+					"2 - Change containings of your cart\n3 - Back\n\n>>> ";
+				std::cin >> choice1;
+				system("cls");
+			} while (choice1 < 1 || choice1 > 3);
+			if (choice1 == 1) {
+
+				for (int i = 0; i < Ammunition.size(); i++) {
+					for (int b = 0; b < Ammunition[i].AmmoTypesIncluded.size(); b++) {
+						for (int k = 0; k < CartContainment.size(); k++) {
+							for (int n = 0; n < CartContainment[k].AmmoTypesIncluded.size(); n++) {
+								if (Ammunition[i].AmmoTypesIncluded[b] == CartContainment[k].AmmoTypesIncluded[n]) {
+									Ammunition[i].AmmoTypesAmount[b] -= CartContainment[k].AmmoTypesAmount[n];
+								}
+
+
+
+
+							}
+						}
+					}
+				}
+
+
+				do {
+					cart_proportions_renew();
+					rewrite_active_storage();
+					std::cout << "Purchase were made succesfully!\n\nWould you like to save your current cart,\nor we better clean it?\n\n1 - Save current\n2 - Make it clean\n\n>>> ";
+					std::cin >> choice1;
+					system("cls");
+				} while (choice1 < 1 || choice1 > 2);
+				if (choice1 == 1) {}
+				else if (choice1 == 2) {
+					CartContainment.clear();
+					
+					std::cout << "Your cart was cleared succesfully!\n\n";
+				}
+			}
+			else if (choice1 == 2) { 
+				
+					
+					do {
+						std::cout << "+-------------------\n" << "| Choose a caliber first (left column)\n" << "+-------------------\n";
+						std::cout <<std::left<< std::setw(16) << "| Calibers" << std::setw(32) << "Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
+							<< std::setw(8) << "(Total cost)\n";
+						for (int i = 0; i < CartContainment.size(); i++) {
+							std::cout << std::left << "| " << i + 1 << "] " << CartContainment[i].Ammo_name << std::endl;
+							for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+								std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16)
+									<< CartContainment[i].AmmoTypesAmount[k] << std::setw(24)
+									<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
+							}
+						}
+						std::cout << ">>> ";
+						std::cin >> ammo_caliber;
+						system("cls");
+					} while (ammo_caliber < 1 || ammo_caliber > CartContainment.size());
+					do {
+						std::cout << "Caliber choosen: " << CartContainment[ammo_caliber - 1].Ammo_name <<"\n";
+						for (int i = 0; i < CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size(); i++) {
+							std::cout << "| " << i + 1 << ") " << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[i] << std::endl;
+						}
+						std::cout << ">>> ";
+						std::cin >> ammo_type;
+						system("cls");
+					} while(ammo_type < 1 || ammo_type > CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size());
+					do {
+						std::cout << "Choosen type \"" << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1] << "\" of a " << CartContainment[ammo_caliber - 1].Ammo_name <<
+							" caliber\n\n" << "What do you want to do?\n1 - Change amount (current:"<< 
+							CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] <<")\n2 - Delete\n3 - Back\n>>> ";
+						std::cin >> choice1;
+					}while (choice1 < 1 || choice1 > 3);
+					if (choice1 == 1) {
+						std::cout << "Enter a new value(current:" << CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] << "): ";
+						std::cin >> CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1];
+						task2_isEnded == true;
+						cart_proportions_renew();
+					}
+					else if (choice1 == 2) {
+						delete_type_from_cart_(CartContainment[ammo_caliber - 1].Ammo_name, CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1]);
+						
+					}
+					else if(choice1 == 3){
+						task2_isEnded == true;
+					}
+					
+				
+				
+			}
+			else if (choice1 == 3) { task1_isEnded = true; }
+		}
+		else {
+			std::cout << "Your cart is currently empty\n";
+			task1_isEnded = true;
+		}
+	}
 }
-void manage_your_account_func_(){
+
+void manage_your_account_func_() {
 	bool operation_complete = false;
 	int choice = 0;
 	while (operation_complete == false) {
@@ -629,7 +1019,7 @@ void manage_your_account_func_(){
 			logged = false;
 			operation_complete = true;
 		}
-		else if (choice == 4) { 
+		else if (choice == 4) {
 			do {
 				system("cls");
 				std::cout << "Are you sure you want to delete your account?\n1 - Yes :(\n2 - No! :D\n>>> ";
@@ -640,19 +1030,20 @@ void manage_your_account_func_(){
 				std::cout << "User account was deleted succesfully\n";
 			}
 			else { system("cls"); }
-		logged = false; operation_complete = true; }
+			logged = false; operation_complete = true;
+		}
 		else if (choice == 5) { operation_complete = true; }
-		
+
 	}
 
-	
+
 }
 
 void adm_manage_user_acc_func_() {
 	int choice = 0, user_select = 0;
 	bool task_is_complete = false;
 	while (task_is_complete == false) {
-		
+
 		do {
 			std::cout << "Users:\n\tNames\t\tPasswords\tAdmission\n";
 			for (int i = 0; i < usernames_list.size(); i++) {
@@ -661,16 +1052,16 @@ void adm_manage_user_acc_func_() {
 			std::cout << "\n\nChoose an account : ";
 			std::cin >> user_select;
 			system("cls");
-		} while (user_select < 1 || user_select >usernames_list.size() );
+		} while (user_select < 1 || user_select >usernames_list.size());
 		do {
-			std::cout << "Account selected: ("<<usernames_list[user_select -1]<<")\nAction?\n1 - Change properties\n2 - delete\n3 - nothing\n>>> ";
+			std::cout << "Account selected: (" << usernames_list[user_select - 1] << ")\nAction?\n1 - Change properties\n2 - delete\n3 - nothing\n>>> ";
 			std::cin >> choice;
 			system("cls");
 		} while (choice < 1 || choice > 3);
 
 		if (choice == 1) {
-			
-			if (admissions_list[user_select - 1]!=1){
+
+			if (admissions_list[user_select - 1] != 1) {
 				do {
 					std::cout << "Account selected: (" << usernames_list[user_select - 1] << ")\n\nProperties:\n1 - Change name\n2 - Change password\n3 - Change admission\n>>> ";
 					std::cin >> choice;
@@ -682,13 +1073,13 @@ void adm_manage_user_acc_func_() {
 					std::getline(std::cin, usernames_list[user_select - 1]);
 				}
 				else if (choice == 2) {
-					std::cout << "Enter the new password for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
-						<< passwords_list[user_select - 1] <<")\n>>> ";
+					std::cout << "Enter the new password for account (" << usernames_list[user_select - 1] << ")\n(Current is "
+						<< passwords_list[user_select - 1] << ")\n>>> ";
 					std::cin.ignore(1000, '\n');
 					std::getline(std::cin, passwords_list[user_select - 1]);
 				}
 				else if (choice == 3) {
-					std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n(Current is " 
+					std::cout << "Enter the new name for account (" << usernames_list[user_select - 1] << ")\n(Current is "
 						<< admissions_list[user_select - 1] << ")\n>>> ";;
 					std::cin >> admissions_list[user_select - 1];
 				}
@@ -699,10 +1090,9 @@ void adm_manage_user_acc_func_() {
 
 		else if (choice == 2) { delete_user(usernames_list[user_select - 1]); }
 		else if (choice == 3) { task_is_complete = true; }
-		
+
 	}
 }
-
 
 void first_start() {
 	std::ifstream file;
@@ -716,38 +1106,78 @@ void first_start() {
 		file_write << "45.ACP|HP_100_40_SP_100_50_Tracer_100_90_$\n";
 		file_write << "50.|HE_140_1100_AP_50_900_Tracer_200_700_APHE_100_1600_$\n";
 		file_write.close();
-		std::cout << "File \"Static\" was created via \"blank slate\" scenario\n"; }
+		std::cout << "File \"Static\" was created via \"blank slate\" scenario\n";
+	}
 	file.close();
 	file.open("AmmoProducts.txt");
-	if (!file.is_open()) { 
+	if (!file.is_open()) {
 		std::ofstream file_read2("AmmoProducts.txt");
-	std::cout << "File \"Mobile\" was created via \"blank slate\" scenario\n"; }
+		std::cout << "File \"Mobile\" was created via \"blank slate\" scenario\n";
+	}
 	file.close();
 	file.open("OtherUsers.txt");
 	if (!file.is_open()) {
-		std::ofstream file_read3("OtherUsers.txt"); 
+		std::ofstream file_read3("OtherUsers.txt");
 		file_write.open("OtherUsers.txt");
 		file_write << ("Admin|Admin|1|");
 		file_write.close();
-		std::cout << "File \"Users\" was created via \"blank slate\" scenario\n"; 
+		std::cout << "File \"Users\" was created via \"blank slate\" scenario\n";
 		std::cout << "Default admin account name is \"Admin\" and password is equal\n\n";
 	}
-
 	file.close();
+	file.open("AllCarts.txt");
+	if (!file.is_open()) {
+		std::ofstream file_read4("AllCarts.txt");
+		std::cout << "File \"Carts\" was created via \"blank slate\" scenario\n";
+	}
+	file.close();
+
+	file.open("CartsSaves/BlankConfirmation.txt");
+	if (!file.is_open()) {
+		system("mkdir CartsSaves");
+		std::ofstream file_read5("CartsSaves/BlankConfirmation.txt");
+		file_write.open("CartsSaves/BlankConfirmation.txt");
+		file_write << ("DO NOT DELETE THIS FILE! OR ALL CARTS WILL BE DELETED AS WELL!!");
+		file_write.close();
+		std::cout << "Folder \"Carts\" was created via \"blank slate\" scenario\n";
+	}
+	file.close();
+
 }
 
-
-
-
+void credits_() {
+	std::cout <<
+		"Greetings, Dear user! :D\nThis programm were created\ndue to need of making some kind of shop\nvia C++ programming language!"<<
+		"\n\nThere's still some work to do\nand i would be really happy if\nyou'll send me some feedback in comments to repository!\n\nLink: "
+		<<"https://github.com/RiftSquadronMember/MagnumKartech-Store.git\n\n"<<
+		"Also! This code is sharing via \"Apache 2.0\" License!\n\n" <<
+		"Glory to corporation!\nEcho 1-1 out!\n\n";
+	std::cout <<
+		"       _______\n" <<
+		"     _/   |   \\_\n" <<
+		"    /    / \\    \\\n" <<
+		"   /____/   \\____\\\n" <<
+		"  | \\__       __/ |\n" <<
+		"  |    \\     /    |\n" <<
+		"   \\   /     \\   /\n" <<
+		"    \\ /  ___  \\ /\n" <<
+		"     \\__/   \\__/\n" <<
+		"      \\       /\n" <<
+		"       \\     /\n" <<
+		"        \\   /\n" <<
+		"         \\_/\n";
+	system("pause");
+	system("cls");
+}
 
 int main() {
-	const int amount_of_actions = 6;
+	const int amount_of_actions = 7;
 	int action_number = 0;
 	bool task_ended = false;
 	///createAdmin();
-	
-	userAction actions[amount_of_actions]{};
 
+	userAction actions[amount_of_actions]{};
+	
 	if (true) {
 		actions[action_number].action_name = "moderate current storage";
 		actions[action_number].action = moderate_store_func_;
@@ -761,13 +1191,13 @@ int main() {
 
 		action_number = 2;
 
-		actions[action_number].action_name = "view store(planned)";
+		actions[action_number].action_name = "view store";
 		actions[action_number].action = view_store_func_;
 		actions[action_number].action_acces = 3;
 
 		action_number = 3;
 
-		actions[action_number].action_name = "view your cart(planned)";
+		actions[action_number].action_name = "view your cart";
 		actions[action_number].action = view_cart_func_;
 		actions[action_number].action_acces = 3;
 
@@ -783,21 +1213,26 @@ int main() {
 		actions[action_number].action = manage_your_account_func_;
 		actions[action_number].action_acces = 3;
 
+		action_number = 6;
+
+		actions[action_number].action_name = "Credits";
+		actions[action_number].action = credits_;
+		actions[action_number].action_acces = 3;
+
 	}
 	first_start();
 	write_static_storage();
 	write_active_storage();
 	rewrite_active_storage();
-	
-	
-	
+
+
 
 	createLists();
 
 	do {
-		while (logged == false){
+		while (logged == false) {
 			EnterMenuOut();
-		} 
+		}
 		UI_out(amount_of_actions, actions);
 	} while (task_ended == false);
 	return 0;
