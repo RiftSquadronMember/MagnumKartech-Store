@@ -25,17 +25,15 @@ struct AmmoType {
 };
 
 
-std::string currentUserName, currentUserPassword, current_user_cart_directory;
+std::string currentUserName, currentUserPassword, current_user_cart_directory, Discount_caliber;
 int currentUserAdmission, cartContainmentAmount = 0;
 bool logged = false;
-float total_cart_cost = 0;
+float total_cart_cost = 0, discount_amount = 0.0;
 
 std::vector<std::string> usernames_list, passwords_list;
 std::vector<int> admissions_list;
 
 std::vector<AmmoType>Ammunition_Static{}, Ammunition{}, CartContainment{};
-
-
 
 void write_static_storage() {
 	std::ifstream file;
@@ -225,7 +223,7 @@ void delete_type_from_cart_(std::string caliber, std::string type) {
 			}
 		}
 	}
-	
+
 
 }
 
@@ -328,7 +326,7 @@ void cart_proportions_renew() {
 		for (int i = 0; i < CartContainment.size(); i++) {
 			for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
 				if (CartContainment[i].AmmoTypesAmount[k] < 0) { CartContainment[i].AmmoTypesAmount[k] = 0; }
-				
+
 				for (int l = 0; l < Ammunition.size(); l++) {
 					for (int b = 0; b < Ammunition[l].AmmoTypesIncluded.size(); b++) {
 						if (Ammunition[l].Ammo_name == CartContainment[i].Ammo_name && Ammunition[l].AmmoTypesIncluded[b] == CartContainment[i].AmmoTypesIncluded[k]) {
@@ -344,20 +342,30 @@ void cart_proportions_renew() {
 			}
 		}
 
-		
-		
+
+
 
 		for (int i = 0; i < CartContainment.size(); i++) {
 			for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
-				total_cart_cost += CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k];
+				if (CartContainment[i].Ammo_name == Discount_caliber) { 
+					total_cart_cost += (CartContainment[i].AmmoTypesCost[k] * (1 - (discount_amount/100))) * CartContainment[i].AmmoTypesAmount[k]; 
+					std::cout << "With: " << CartContainment[i].Ammo_name << "\n";
+				}
+				else {
+					total_cart_cost += CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k];
+					std::cout << "Without: " << CartContainment[i].Ammo_name << "\n";
+				}
+				Sleep(50);
 			}
 		}
-
+		system("cls");
 		
 
 
+
+
 	}
-		cart_in_file_rewrite();
+	cart_in_file_rewrite();
 
 
 
@@ -388,7 +396,7 @@ void logUserIn(std::string UserName, std::string Password) {
 				file.close();
 				std::cout << "\n";
 				write_carts();
-				
+
 			};
 		}
 	}
@@ -767,10 +775,6 @@ void moderate_store_func_() {
 void view_static_storage_func_() {
 	read_storage(Ammunition_Static);
 }
-void renew_current_storage_func_() {
-	std::cout << "blank storage you see, there's current things you can change\n";
-}
-
 
 
 void store_UI_out() {
@@ -805,16 +809,16 @@ void view_store_func_() {
 				std::cin >> caliber;
 				system("cls");
 			} while (caliber < 1 || caliber > Ammunition.size());
-			
+
 			do {
-				std::cout << "\nCaliber choosen: (" << Ammunition[caliber - 1].Ammo_name <<")\nChoose a type:\n";
+				std::cout << "\nCaliber choosen: (" << Ammunition[caliber - 1].Ammo_name << ")\nChoose a type:\n";
 				for (int i = 0; i < Ammunition[caliber - 1].AmmoTypesIncluded.size(); i++) {
-					std::cout << i + 1 << ") - " << Ammunition[caliber - 1].AmmoTypesIncluded[i]<< std::endl;
+					std::cout << i + 1 << ") - " << Ammunition[caliber - 1].AmmoTypesIncluded[i] << std::endl;
 				}
 				std::cout << "\n>>> ";
 				std::cin >> type;
 				system("cls");
-			} while (type < 1 || type > Ammunition[caliber-1].AmmoTypesIncluded.size());
+			} while (type < 1 || type > Ammunition[caliber - 1].AmmoTypesIncluded.size());
 
 
 			do {
@@ -825,8 +829,8 @@ void view_store_func_() {
 			if (amount > Ammunition[caliber - 1].AmmoTypesAmount[type - 1]) {
 				amount = Ammunition[caliber - 1].AmmoTypesAmount[type - 1];
 			}
-			
-			
+
+
 
 			for (int i = 0; i < Ammunition.size(); i++) {
 
@@ -835,7 +839,7 @@ void view_store_func_() {
 					for (int k = 0; k < CartContainment.size(); k++) {
 						if (Ammunition[caliber - 1].Ammo_name == CartContainment[k].Ammo_name) {
 							CaliberMatch = k;
-							std::cout << "Calibers match fnd: " << Ammunition[i].Ammo_name << " - " 
+							std::cout << "Calibers match fnd: " << Ammunition[i].Ammo_name << " - "
 								<< CartContainment[k].Ammo_name << std::endl;
 							Sleep(40);
 						}
@@ -843,7 +847,7 @@ void view_store_func_() {
 							if (Ammunition[caliber - 1].AmmoTypesIncluded[type - 1] == CartContainment[k].AmmoTypesIncluded[n]) {
 								TypeMatch = n;
 								std::cout << "Ammunition: " << Ammunition[i].Ammo_name << " - " << CartContainment[k].Ammo_name << std::endl;
-								std::cout << "Match fnd: " << Ammunition[i].AmmoTypesIncluded[b]<<" - "<< CartContainment[k].AmmoTypesIncluded[n] << std::endl;
+								std::cout << "Match fnd: " << Ammunition[i].AmmoTypesIncluded[b] << " - " << CartContainment[k].AmmoTypesIncluded[n] << std::endl;
 							}
 						}
 					}
@@ -851,8 +855,8 @@ void view_store_func_() {
 			}
 			Sleep(200);
 			if (CaliberMatch == -1) {
-				CartContainment.push_back(AmmoType(Ammunition[caliber - 1].Ammo_name, 
-					{ Ammunition[caliber - 1].AmmoTypesIncluded[type - 1]},
+				CartContainment.push_back(AmmoType(Ammunition[caliber - 1].Ammo_name,
+					{ Ammunition[caliber - 1].AmmoTypesIncluded[type - 1] },
 					{ amount },
 					{ Ammunition[caliber - 1].AmmoTypesCost[type - 1] }));
 				std::cout << "Caliber not found\n";
@@ -872,11 +876,11 @@ void view_store_func_() {
 				Sleep(25);
 			}
 			cart_proportions_renew();
-		
-		
+
+
 			system("cls");
-		
-		
+
+
 		}
 		if (choice == 2) { task1_isEnded = true; }
 
@@ -890,17 +894,17 @@ void view_cart_func_() {
 	while (task1_isEnded == false) {
 		cart_proportions_renew();
 
-		if (cartContainmentAmount != 0 && CartContainment.size()!= 0) {
+		if (cartContainmentAmount != 0 && CartContainment.size() != 0) {
 			do {
 				std::cout << std::left <<
 					"+-------------------\n" <<
 					"| Your cart contains " << cartContainmentAmount << " positions in total!\n" <<
-					"+-------------------\n" << std::setw(16)<< "| Calibers" << std::setw(32) <<"Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
+					"+-------------------\n" << std::setw(16) << "| Calibers" << std::setw(32) << "Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
 					<< std::setw(8) << "(Total cost)\n";
 				for (int i = 0; i < CartContainment.size(); i++) {
 					std::cout << std::left << "| " << i + 1 << "] " << CartContainment[i].Ammo_name << std::endl;
 					for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
-						std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16) 
+						std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16)
 							<< CartContainment[i].AmmoTypesAmount[k] << std::setw(24)
 							<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
 					}
@@ -940,60 +944,60 @@ void view_cart_func_() {
 				if (choice1 == 1) {}
 				else if (choice1 == 2) {
 					CartContainment.clear();
-					
+
 					std::cout << "Your cart was cleared succesfully!\n\n";
 				}
 			}
-			else if (choice1 == 2) { 
-				
-					
-					do {
-						std::cout << "+-------------------\n" << "| Choose a caliber first (left column)\n" << "+-------------------\n";
-						std::cout <<std::left<< std::setw(16) << "| Calibers" << std::setw(32) << "Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
-							<< std::setw(8) << "(Total cost)\n";
-						for (int i = 0; i < CartContainment.size(); i++) {
-							std::cout << std::left << "| " << i + 1 << "] " << CartContainment[i].Ammo_name << std::endl;
-							for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
-								std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16)
-									<< CartContainment[i].AmmoTypesAmount[k] << std::setw(24)
-									<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
-							}
+			else if (choice1 == 2) {
+
+
+				do {
+					std::cout << "+-------------------\n" << "| Choose a caliber first (left column)\n" << "+-------------------\n";
+					std::cout << std::left << std::setw(16) << "| Calibers" << std::setw(32) << "Types" << std::setw(16) << "(Amount)" << std::setw(24) << "(cost per round)"
+						<< std::setw(8) << "(Total cost)\n";
+					for (int i = 0; i < CartContainment.size(); i++) {
+						std::cout << std::left << "| " << i + 1 << "] " << CartContainment[i].Ammo_name << std::endl;
+						for (int k = 0; k < CartContainment[i].AmmoTypesIncluded.size(); k++) {
+							std::cout << std::left << std::setw(13) << "|    :-" << k + 1 << ") " << std::setw(32) << CartContainment[i].AmmoTypesIncluded[k] << std::setw(16)
+								<< CartContainment[i].AmmoTypesAmount[k] << std::setw(24)
+								<< CartContainment[i].AmmoTypesCost[k] << std::setw(16) << CartContainment[i].AmmoTypesCost[k] * CartContainment[i].AmmoTypesAmount[k] << std::endl;
 						}
-						std::cout << ">>> ";
-						std::cin >> ammo_caliber;
-						system("cls");
-					} while (ammo_caliber < 1 || ammo_caliber > CartContainment.size());
-					do {
-						std::cout << "Caliber choosen: " << CartContainment[ammo_caliber - 1].Ammo_name <<"\n";
-						for (int i = 0; i < CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size(); i++) {
-							std::cout << "| " << i + 1 << ") " << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[i] << std::endl;
-						}
-						std::cout << ">>> ";
-						std::cin >> ammo_type;
-						system("cls");
-					} while(ammo_type < 1 || ammo_type > CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size());
-					do {
-						std::cout << "Choosen type \"" << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1] << "\" of a " << CartContainment[ammo_caliber - 1].Ammo_name <<
-							" caliber\n\n" << "What do you want to do?\n1 - Change amount (current:"<< 
-							CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] <<")\n2 - Delete\n3 - Back\n>>> ";
-						std::cin >> choice1;
-					}while (choice1 < 1 || choice1 > 3);
-					if (choice1 == 1) {
-						std::cout << "Enter a new value(current:" << CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] << "): ";
-						std::cin >> CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1];
-						task2_isEnded == true;
-						cart_proportions_renew();
 					}
-					else if (choice1 == 2) {
-						delete_type_from_cart_(CartContainment[ammo_caliber - 1].Ammo_name, CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1]);
-						
+					std::cout << ">>> ";
+					std::cin >> ammo_caliber;
+					system("cls");
+				} while (ammo_caliber < 1 || ammo_caliber > CartContainment.size());
+				do {
+					std::cout << "Caliber choosen: " << CartContainment[ammo_caliber - 1].Ammo_name << "\n";
+					for (int i = 0; i < CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size(); i++) {
+						std::cout << "| " << i + 1 << ") " << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[i] << std::endl;
 					}
-					else if(choice1 == 3){
-						task2_isEnded == true;
-					}
-					
-				
-				
+					std::cout << ">>> ";
+					std::cin >> ammo_type;
+					system("cls");
+				} while (ammo_type < 1 || ammo_type > CartContainment[ammo_caliber - 1].AmmoTypesIncluded.size());
+				do {
+					std::cout << "Choosen type \"" << CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1] << "\" of a " << CartContainment[ammo_caliber - 1].Ammo_name <<
+						" caliber\n\n" << "What do you want to do?\n1 - Change amount (current:" <<
+						CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] << ")\n2 - Delete\n3 - Back\n>>> ";
+					std::cin >> choice1;
+				} while (choice1 < 1 || choice1 > 3);
+				if (choice1 == 1) {
+					std::cout << "Enter a new value(current:" << CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1] << "): ";
+					std::cin >> CartContainment[ammo_caliber - 1].AmmoTypesAmount[ammo_type - 1];
+					task2_isEnded == true;
+					cart_proportions_renew();
+				}
+				else if (choice1 == 2) {
+					delete_type_from_cart_(CartContainment[ammo_caliber - 1].Ammo_name, CartContainment[ammo_caliber - 1].AmmoTypesIncluded[ammo_type - 1]);
+
+				}
+				else if (choice1 == 3) {
+					task2_isEnded == true;
+				}
+
+
+
 			}
 			else if (choice1 == 3) { task1_isEnded = true; }
 		}
@@ -1143,13 +1147,20 @@ void first_start() {
 	}
 	file.close();
 
+	file.open("Discounts.txt");
+	if (!file.is_open()) {
+		std::ofstream file_read6("Discounts.txt");
+		std::cout << "File \"Discounts\" was created via \"blank slate\" scenario\n";
+	}
+	file.close();
+
 }
 
 void credits_() {
 	std::cout <<
-		"Greetings, Dear user! :D\nThis programm were created\ndue to need of making some kind of shop\nvia C++ programming language!"<<
+		"Greetings, Dear user! :D\nThis programm were created\ndue to need of making some kind of shop\nvia C++ programming language!" <<
 		"\n\nThere's still some work to do\nand i would be really happy if\nyou'll send me some feedback in comments to repository!\n\nLink: "
-		<<"https://github.com/RiftSquadronMember/MagnumKartech-Store.git\n\n"<<
+		<< "https://github.com/RiftSquadronMember/MagnumKartech-Store.git\n\n" <<
 		"Also! This code is sharing via \"Apache 2.0\" License!\n\n" <<
 		"Glory to corporation!\nEcho 1-1 signing off!\n\n";
 	std::cout <<
@@ -1170,14 +1181,98 @@ void credits_() {
 	system("cls");
 }
 
+
+//discount
+
+void read_discounts() {
+	std::string line, word;
+	std::ifstream file;
+	int counter = 0;
+	file.open("Discounts.txt");
+	if (file.is_open()) {
+		while (std::getline(file, line)) {
+			for (int i = 0; i < line.length()+1; i++) {
+				if (line[i] != '|'){ word = word + line[i]; }
+				
+				if (counter == 0 && line[i] == '|') {
+					Discount_caliber = word;
+					counter = 1;
+					word = "";
+				}
+				else if (counter == 1 && line[i] == '|') {
+					discount_amount = stof(word);
+				}
+			}
+		}
+	}
+	file.close();
+}
+
+void rewrite_discounts() {
+	std::ofstream file;
+	file.open("Discounts.txt");
+	file << Discount_caliber << "|" << discount_amount << "|";
+	file.close();
+}
+
+void set_discount_caliber(){
+	read_discounts();
+	std::string caliber;
+	int choice = 0;
+	bool task_end = false;
+	while (task_end == false) {
+		do {
+			std::cout << "Current caliber set:  " << Discount_caliber <<"\nCurrent discount set: " << discount_amount;
+			std::cout << "%\n\nWhat do you want to do?\n1 - Set discounted caliber\n2 - Turn off discounted caliber\n3 - Back\n\n>>> ";
+			std::cin >> choice;
+		} while (choice < 1 || choice > 3);
+
+
+		if (choice == 1) {
+			do {
+				std::cout << "What caliber you want to set as \"Discounted\"?\n";
+				for (int i = 0; i < Ammunition.size(); i++) {
+					std::cout <<i+1<< ") - " << Ammunition[i].Ammo_name << "\n";
+				}
+				std::cout << "\n\n>>> ";
+				std::cin >> choice;
+				system("cls");
+			} while (choice < 1 || choice > Ammunition.size());
+			do {
+				std::cout << "Enter discount multiplyer (0.5% - 100%)\n>>> ";
+				std::cin >> discount_amount;
+				system("cls");
+			} while (discount_amount < 0.5 || discount_amount > 100);
+
+			Discount_caliber = Ammunition[choice-1].Ammo_name;
+			task_end = true;
+
+		}
+		else if (choice == 2) {
+			Discount_caliber = "-";
+			task_end = true;
+		}
+		else if (choice == 3) {
+			task_end = true;
+		}
+		rewrite_discounts();
+		system("cls");
+		std::cout << "Caliber set\n\n";
+	}
+}
+
+
+
+
+
 int main() {
-	const int amount_of_actions = 7;
+	const int amount_of_actions = 8;
 	int action_number = 0;
 	bool task_ended = false;
 	///createAdmin();
 
 	userAction actions[amount_of_actions]{};
-	
+
 	if (true) {
 		actions[action_number].action_name = "moderate current storage";
 		actions[action_number].action = moderate_store_func_;
@@ -1215,16 +1310,23 @@ int main() {
 
 		action_number = 6;
 
+		actions[action_number].action_name = "Discounts";
+		actions[action_number].action = set_discount_caliber;
+		actions[action_number].action_acces = 1;
+
+		action_number = 7;
+
 		actions[action_number].action_name = "Credits";
 		actions[action_number].action = credits_;
 		actions[action_number].action_acces = 3;
+
 
 	}
 	first_start();
 	write_static_storage();
 	write_active_storage();
 	rewrite_active_storage();
-
+	read_discounts();
 
 
 	createLists();
