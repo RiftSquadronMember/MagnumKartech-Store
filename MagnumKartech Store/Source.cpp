@@ -1151,7 +1151,7 @@ void credits_() {
 		"\n\nThere's still some work to do\nand i would be really happy if\nyou'll send me some feedback in comments to repository!\n\nLink: "
 		<<"https://github.com/RiftSquadronMember/MagnumKartech-Store.git\n\n"<<
 		"Also! This code is sharing via \"Apache 2.0\" License!\n\n" <<
-		"Glory to corporation!\nEcho 1-1 out!\n\n";
+		"Glory to corporation!\nEcho 1-1 signing off!\n\n";
 	std::cout <<
 		"       _______\n" <<
 		"     _/   |   \\_\n" <<
